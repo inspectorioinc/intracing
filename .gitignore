@@ -1,0 +1,13 @@
+# PyCharm
+.idea/
+
+# tests
+.coverage
+.pytest_cache
+.tox
+coverage.xml
+htmlcov/
+
+# misc
+*.pyc
+intracing.egg-info/
