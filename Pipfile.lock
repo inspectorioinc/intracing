@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "39e2bfd8205351892e332c8107897fb767f0c268f20de080525ea5bf5e0e7a5a"
+            "sha256": "bb83ff375afa95fd051d533672c0cd37a7f9edfa42f4a5876c55d5f77739c70a"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -101,6 +101,7 @@
             "hashes": [
                 "sha256:9b3f7c7a20c34170b9253c97121256264daf6b5f090035c732c6e2548cc5c0a7"
             ],
+            "index": "pypi",
             "version": "==1.3.0"
         },
         "opentracing-instrumentation": {

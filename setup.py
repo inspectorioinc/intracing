@@ -12,6 +12,7 @@ setup(
         'flask',
         'flask-opentracing',
         'jaeger-client',
+        'opentracing<2',
         'opentracing-instrumentation',
         'requests',
     ],
