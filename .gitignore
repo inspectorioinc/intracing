@@ -11,3 +11,4 @@ htmlcov/
 # misc
 *.pyc
 intracing.egg-info/
+dist/
