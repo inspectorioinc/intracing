@@ -8,13 +8,13 @@ flask = "*"
 flask-opentracing = "*"
 jaeger-client = "*"
 opentracing = "<2"
-opentracing-instrumentation = "*"
-requests = "*"
+opentracing-instrumentation = {git = "https://github.com/Jamim/opentracing-python-instrumentation.git", ref = "feature/response-handler-hook"}
 
 [dev-packages]
 faker = "*"
 flake8 = "*"
+flake8-quotes = "*"
 mock = "*"
 pytest = "*"
 pytest-cov = "*"
-requests-mock = "*"
+requests = "*"

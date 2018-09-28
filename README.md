@@ -41,6 +41,8 @@ You can also configure `APM` agent location using
 Usually you should provide at least `TRACING_AGENT_HOST` variable,
 since the default value is `localhost`.
 
+Logging can be enabled using `TRACING_LOGGING` variable.
+
 ### Testing
 
 The following versions of Python interpreter should be available locally:
@@ -50,5 +52,5 @@ The following versions of Python interpreter should be available locally:
 
 Use [tox](https://tox.readthedocs.io/en/latest/) to run tests.
 ```bash
-tox
+PIP_PROCESS_DEPENDENCY_LINKS=1 tox
 ```

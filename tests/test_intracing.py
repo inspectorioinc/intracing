@@ -1,9 +1,12 @@
 import os
 
 import mock
+import pytest
 import requests
 from flask import Flask
 from jaeger_client.constants import TRACE_ID_HEADER
+from jaeger_client.reporter import InMemoryReporter
+from jaeger_client.thrift_gen.jaeger.ttypes import TagType
 
 from intracing import configure_tracing
 from intracing.intracing import InspectorioTracer, TracingHelper as Helper
@@ -28,60 +31,75 @@ class TestInspectorioTracer(object):
         jaeger_tracer_mock.start_span.assert_called_once_with(*args, **kwargs)
 
 
+TEST_ENV_VARIABLES = {
+    'TRACING_ENABLED': 'y',
+    'TRACING_SERVICE_NAME': 'test-service',
+}
+
+
+def get_app():
+    app = Flask(__name__)
+    configure_tracing(app)
+    return app
+
+
+@pytest.fixture
+def app():
+    with mock.patch.dict(os.environ, TEST_ENV_VARIABLES):
+        return get_app()
+
+
+@pytest.fixture(autouse=True, scope='module')
+def reporter():
+    reporter = InMemoryReporter()
+    with mock.patch('jaeger_client.config.Reporter', return_value=reporter):
+        yield reporter
+
+
 class TestTracingHelper(object):
 
-    TEST_ENV_VARIABLES = {
-        'TRACING_ENABLED': 'y',
-        'TRACING_SERVICE_NAME': 'test-service',
-    }
-
-    @property
-    def app(self):
-        app = Flask(__name__)
-        configure_tracing(app)
-        return app
-
     def test_disabled(self):
-        app = self.app
-
+        app = get_app()
         assert app.before_first_request_funcs == []
         assert app.before_request_funcs == {}
         assert app.after_request_funcs == {}
 
-    @mock.patch.dict(os.environ, TEST_ENV_VARIABLES)
-    def test_enabled(self):
-        app = self.app
-
+    def test_enabled(self, app):
         assert app.before_first_request_funcs
         assert Helper.enter_request_context in app.before_request_funcs[None]
         assert Helper.exit_request_context in app.after_request_funcs[None]
 
-    @mock.patch.dict(os.environ, TEST_ENV_VARIABLES)
     @mock.patch('jaeger_client.config.Config.new_tracer')
-    def test_tracer_initialization(self, new_tracer_mock):
-        self.app.test_client().get('/')  # making request to init tracer
+    def test_tracer_initialization(self, new_tracer_mock, app):
+        app.test_client().get('/')  # making request to init tracer
         new_tracer_mock.assert_called_once()
 
-    @mock.patch.dict(os.environ, TEST_ENV_VARIABLES)
-    def test_requests_patching(self, requests_mock):
-        app = self.app
+    @mock.patch('requests.adapters.HTTPAdapter.cert_verify')
+    @mock.patch('requests.adapters.HTTPAdapter.get_connection')
+    @pytest.mark.parametrize('headers,ok', [
+        (None, True),
+        (None, False),
+        ({'foo': 'bar'}, True),
+        ({'foo': 'bar'}, False),
+    ])
+    def test_requests_patching(self, get_connection_mock, cert_verify_mock,
+                               app, headers, ok, reporter):
         url = 'http://example.com'
-        requests_mock.get(url)
+        urlopen = get_connection_mock.return_value.urlopen
+        urlopen.return_value.status = 200 if ok else 404
 
         @app.route('/')
         def get():
-            requests.get(url)
-
-        @app.route('/with-headers')
-        def get_with_headers():
-            requests.get(url, headers={'foo': 'bar'})
+            requests.get(url, headers=headers)
 
         app.test_client().get('/')
-        assert TRACE_ID_HEADER in requests_mock.last_request.headers
+        actual_headers = urlopen.call_args[1]['headers']
+        assert TRACE_ID_HEADER in actual_headers
+        if headers:
+            assert 'foo' in actual_headers
 
-        app.test_client().get('/with-headers')
-        assert TRACE_ID_HEADER in requests_mock.last_request.headers
-        assert 'foo' in requests_mock.last_request.headers
-
-        requests.get(url)
-        assert TRACE_ID_HEADER not in requests_mock.last_request.headers
+        if not ok:
+            error_tag = reporter.spans[-1].tags[-1]
+            assert error_tag.key == 'error'
+            assert error_tag.vType == TagType.BOOL
+            assert error_tag.vBool

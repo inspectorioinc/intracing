@@ -2,9 +2,9 @@ import logging
 import os
 
 import opentracing
-import requests
 from flask import request
 from flask_opentracing import FlaskTracer
+from jaeger_client.thrift_gen.jaeger.ttypes import Tag, TagType
 from jaeger_client.config import (
     Config, DEFAULT_REPORTING_HOST, DEFAULT_REPORTING_PORT
 )
@@ -24,27 +24,17 @@ class InspectorioTracer(FlaskTracer):
 class TracingHelper(object):
 
     @staticmethod
-    def patch_requests():
-        original_request = requests.api.request
-
-        def wrapped_request(*args, **kwargs):
-            headers = kwargs.pop('headers', None)
-            tracer = opentracing.tracer
-            span = tracer.get_span()
-            if span:
-                if headers is None:
-                    headers = {}
-                tracer.inject(
-                    span, opentracing.Format.HTTP_HEADERS, headers
-                )
-            return original_request(*args, headers=headers, **kwargs)
-
-        requests.api.request = wrapped_request
+    def requests_response_handler_hook(response, span):
+        if not response.ok:
+            with span.update_lock:
+                tag = Tag(key='error', vType=TagType.BOOL, vBool=True)
+                span.tags.append(tag)
 
     @classmethod
     def apply_patches(cls):
-        install_all_patches()
-        cls.patch_requests()
+        install_all_patches(
+            requests_response_handler_hook=cls.requests_response_handler_hook
+        )
 
     @staticmethod
     def enter_request_context():
@@ -59,10 +49,11 @@ class TracingHelper(object):
 
     @classmethod
     def configure_tracing(cls, app):
-        tracing_enabled = os.getenv('TRACING_ENABLED', '').lower() in {
-            'true', 'on', 'ok', 'y', 'yes', '1'
-        }
-        if not tracing_enabled:
+        def is_enabled(key):
+            value = os.getenv(key, '').lower()
+            return value in {'true', 'on', 'ok', 'y', 'yes', '1'}
+
+        if not is_enabled('TRACING_ENABLED'):
             return
 
         service_name = os.environ['TRACING_SERVICE_NAME']
@@ -81,7 +72,7 @@ class TracingHelper(object):
                     'reporting_host': reporting_host,
                     'reporting_port': reporting_port,
                 },
-                'logging': __debug__,
+                'logging': is_enabled('TRACING_LOGGING'),
             },
             service_name=service_name,
         )
