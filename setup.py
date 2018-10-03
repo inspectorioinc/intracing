@@ -8,7 +8,7 @@ setup(
     author_email='aliaksei@inspectorio.com',
     url='https://gitlab.inspectorio.com/saas/libs/inspectorio-tracing',
     name='intracing',
-    version='1.0.1',
+    version='1.0.2',
     description='Inspectorio Tracing Helper',
     install_requires=[
         'flask',
@@ -20,7 +20,7 @@ setup(
     ],
     dependency_links=[
         'git+https://github.com/Jamim/opentracing-python-instrumentation.git'
-        '@feature/response-handler-hook'
+        '@fix/register-type'
         '#egg=opentracing_instrumentation-{version}'.format(
             version=OPENTRACING_INSTRUMENTATION_VERSION
         )
