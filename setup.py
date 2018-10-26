@@ -1,5 +1,7 @@
 from setuptools import find_packages, setup
 
+import intracing
+
 OPENTRACING_INSTRUMENTATION_VERSION = '2.5.0.dev0'
 
 setup(
@@ -8,7 +10,7 @@ setup(
     author_email='aliaksei@inspectorio.com',
     url='https://gitlab.inspectorio.com/saas/libs/inspectorio-tracing',
     name='intracing',
-    version='1.0.2',
+    version=intracing.__version__,
     description='Inspectorio Tracing Helper',
     install_requires=[
         'flask',
@@ -16,7 +18,6 @@ setup(
         'jaeger-client',
         'opentracing<2',
         'opentracing-instrumentation==' + OPENTRACING_INSTRUMENTATION_VERSION,
-        'requests',
     ],
     dependency_links=[
         'git+https://github.com/Jamim/opentracing-python-instrumentation.git'

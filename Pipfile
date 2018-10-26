@@ -8,7 +8,7 @@ flask = "*"
 flask-opentracing = "*"
 jaeger-client = "*"
 opentracing = "<2"
-opentracing-instrumentation = {git = "https://github.com/Jamim/opentracing-python-instrumentation.git", ref = "fix/register-type"}
+opentracing-instrumentation = {git = "https://github.com/Jamim/opentracing-python-instrumentation.git", ref = "feature/celery"}
 
 [dev-packages]
 faker = "*"
