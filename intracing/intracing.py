@@ -8,8 +8,15 @@ from jaeger_client.thrift_gen.jaeger.ttypes import Tag, TagType
 from jaeger_client.config import (
     Config, DEFAULT_REPORTING_HOST, DEFAULT_REPORTING_PORT
 )
+from opentracing.ext import tags
 from opentracing_instrumentation.client_hooks import install_all_patches
 from opentracing_instrumentation.request_context import RequestContextManager
+
+
+TAG_SPAN_KIND = Tag(key=tags.SPAN_KIND, vType=TagType.STRING,
+                    vStr=tags.SPAN_KIND_RPC_SERVER)
+TAG_COMPONENT = Tag(key=tags.COMPONENT, vType=TagType.STRING, vStr='Flask')
+TAG_ERROR = Tag(key=tags.ERROR, vType=TagType.BOOL, vBool=True)
 
 
 class InspectorioTracer(FlaskTracer):
@@ -27,8 +34,7 @@ class TracingHelper(object):
     def requests_response_handler_hook(response, span):
         if not response.ok:
             with span.update_lock:
-                tag = Tag(key='error', vType=TagType.BOOL, vBool=True)
-                span.tags.append(tag)
+                span.tags.append(TAG_ERROR)
 
     @classmethod
     def apply_patches(cls):
@@ -39,11 +45,26 @@ class TracingHelper(object):
     @staticmethod
     def enter_request_context():
         span = opentracing.tracer.get_span()
+        span.tags.append(TAG_SPAN_KIND)
+        span.tags.append(TAG_COMPONENT)
+        span.tags.append(Tag(
+            key=tags.HTTP_METHOD, vType=TagType.STRING, vStr=request.method
+        ))
+        span.tags.append(Tag(
+            key=tags.HTTP_URL, vType=TagType.STRING, vStr=request.url
+        ))
         request.tracing_context = RequestContextManager(span)
         request.tracing_context.__enter__()
 
     @staticmethod
     def exit_request_context(response):
+        span = opentracing.tracer.get_span()
+        status_code = response.status_code
+        span.tags.append(Tag(
+            key=tags.HTTP_STATUS_CODE, vType=TagType.LONG, vLong=status_code
+        ))
+        if not 200 <= status_code < 300:
+            span.tags.append(TAG_ERROR)
         request.tracing_context.__exit__()
         return response
 

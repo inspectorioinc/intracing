@@ -7,6 +7,7 @@ from flask import Flask
 from jaeger_client.constants import TRACE_ID_HEADER
 from jaeger_client.reporter import InMemoryReporter
 from jaeger_client.thrift_gen.jaeger.ttypes import TagType
+from opentracing.ext import tags
 
 from intracing import configure_tracing
 from intracing.intracing import InspectorioTracer, TracingHelper as Helper
@@ -49,7 +50,7 @@ def app():
         return get_app()
 
 
-@pytest.fixture(autouse=True, scope='module')
+@pytest.fixture(autouse=True)
 def reporter():
     reporter = InMemoryReporter()
     with mock.patch('jaeger_client.config.Reporter', return_value=reporter):
@@ -57,6 +58,11 @@ def reporter():
 
 
 class TestTracingHelper(object):
+
+    @staticmethod
+    def assert_tag(tag, **attrs):
+        for key, value in attrs.items():
+            assert getattr(tag, key) == value
 
     def test_disabled(self):
         app = get_app()
@@ -76,30 +82,68 @@ class TestTracingHelper(object):
 
     @mock.patch('requests.adapters.HTTPAdapter.cert_verify')
     @mock.patch('requests.adapters.HTTPAdapter.get_connection')
-    @pytest.mark.parametrize('headers,ok', [
-        (None, True),
-        (None, False),
-        ({'foo': 'bar'}, True),
-        ({'foo': 'bar'}, False),
-    ])
+    @pytest.mark.parametrize('headers', (None, {'foo': 'bar'}))
+    @pytest.mark.parametrize('status_code', (200, 404))
     def test_requests_patching(self, get_connection_mock, cert_verify_mock,
-                               app, headers, ok, reporter):
+                               app, headers, status_code, reporter):
         url = 'http://example.com'
         urlopen = get_connection_mock.return_value.urlopen
-        urlopen.return_value.status = 200 if ok else 404
+        urlopen.return_value.status = status_code
 
         @app.route('/')
         def get():
             requests.get(url, headers=headers)
+            return ''
 
-        app.test_client().get('/')
+        response = app.test_client().get('/')
+        assert response.status_code == 200
+
         actual_headers = urlopen.call_args[1]['headers']
         assert TRACE_ID_HEADER in actual_headers
         if headers:
             assert 'foo' in actual_headers
 
-        if not ok:
-            error_tag = reporter.spans[-1].tags[-1]
-            assert error_tag.key == 'error'
-            assert error_tag.vType == TagType.BOOL
-            assert error_tag.vBool
+        if status_code == 404:
+            tag_error = reporter.spans[0].tags[-1]
+            self.assert_tag(tag_error, key=tags.ERROR,
+                            vType=TagType.BOOL, vBool=True)
+        else:
+            for tag in reporter.spans[0].tags:
+                assert tag.key != tags.ERROR
+
+    @pytest.mark.parametrize('method', ('GET', 'POST', 'PUT', 'DELETE'))
+    @pytest.mark.parametrize('status_code', (200, 404))
+    def test_tag_setting(self, app, method, status_code, reporter):
+
+        @app.route('/', methods=[method])
+        def get():
+            return '', status_code
+
+        response = app.test_client().open('/', method=method)
+        assert response.status_code == status_code
+
+        view_span_tags = reporter.spans[-1].tags
+
+        self.assert_tag(view_span_tags[2], key=tags.SPAN_KIND,
+                        vType=TagType.STRING, vStr=tags.SPAN_KIND_RPC_SERVER)
+
+        self.assert_tag(view_span_tags[3], key=tags.COMPONENT,
+                        vType=TagType.STRING, vStr='Flask')
+
+        self.assert_tag(view_span_tags[4], key=tags.HTTP_METHOD,
+                        vType=TagType.STRING, vStr=method)
+
+        self.assert_tag(view_span_tags[5], key=tags.HTTP_URL,
+                        vType=TagType.STRING, vStr='http://localhost/')
+
+        tag_http_status_code = view_span_tags[6]
+        self.assert_tag(tag_http_status_code, key=tags.HTTP_STATUS_CODE,
+                        vType=TagType.LONG, vLong=status_code)
+
+        if status_code == 404:
+            tag_error = view_span_tags[-1]
+            self.assert_tag(tag_error, key=tags.ERROR,
+                            vType=TagType.BOOL, vBool=True)
+        else:
+            for tag in view_span_tags:
+                assert tag.key != tags.ERROR
