@@ -111,5 +111,14 @@ class TracingHelper(object):
         app.before_request(cls.enter_request_context)
         app.after_request(cls.exit_request_context)
 
+        try:
+            from celery.signals import worker_init
+        except ImportError:
+            pass
+        else:
+            @worker_init.connect(weak=False)
+            def apply_patches(**kwargs):
+                cls.apply_patches()
+
 
 configure_tracing = TracingHelper.configure_tracing

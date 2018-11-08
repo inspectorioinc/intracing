@@ -11,6 +11,7 @@ opentracing = "<2"
 opentracing-instrumentation = {git = "https://github.com/Jamim/opentracing-python-instrumentation.git", ref = "feature/celery"}
 
 [dev-packages]
+celery = "*"
 faker = "*"
 flake8 = "*"
 flake8-quotes = "*"

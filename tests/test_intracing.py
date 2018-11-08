@@ -3,6 +3,7 @@ import os
 import mock
 import pytest
 import requests
+from celery.signals import worker_init
 from flask import Flask
 from jaeger_client.constants import TRACE_ID_HEADER
 from jaeger_client.reporter import InMemoryReporter
@@ -44,10 +45,14 @@ def get_app():
     return app
 
 
-@pytest.fixture
-def app():
+def get_instrumented_app():
     with mock.patch.dict(os.environ, TEST_ENV_VARIABLES):
         return get_app()
+
+
+@pytest.fixture
+def app():
+    return get_instrumented_app()
 
 
 @pytest.fixture(autouse=True)
@@ -147,3 +152,16 @@ class TestTracingHelper(object):
         else:
             for tag in view_span_tags:
                 assert tag.key != tags.ERROR
+
+    @mock.patch('celery.signals.worker_init')
+    def test_no_celery(self, *mocks):
+        import celery.signals
+        del celery.signals.worker_init
+        get_instrumented_app()
+
+    @mock.patch('intracing.intracing.TracingHelper.apply_patches')
+    def test_celery_apply_patches(self, apply_patches_mock):
+        worker_init.receivers = []
+        get_instrumented_app()
+        worker_init.send(None)
+        apply_patches_mock.assert_called_once_with()
