@@ -35,7 +35,7 @@ setup(
     ],
     dependency_links=[
         'git+https://github.com/Jamim/opentracing-python-instrumentation.git'
-        '@fix/register-type'
+        '@feature/celery'
         '#egg=opentracing_instrumentation-{version}'.format(
             version=OPENTRACING_INSTRUMENTATION_VERSION
         )
