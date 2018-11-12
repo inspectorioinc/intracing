@@ -24,6 +24,9 @@ class InspectorioTracer(FlaskTracer):
     def inject(self, *args, **kwargs):
         return self._tracer.inject(*args, **kwargs)
 
+    def extract(self, *args, **kwargs):
+        return self._tracer.extract(*args, **kwargs)
+
     def start_span(self, *args, **kwargs):
         return self._tracer.start_span(*args, **kwargs)
 

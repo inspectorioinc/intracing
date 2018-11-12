@@ -16,21 +16,24 @@ from intracing.intracing import InspectorioTracer, TracingHelper as Helper
 
 class TestInspectorioTracer(object):
 
-    def test_inject(self):
+    def _test_method(self, method):
         args = ('foo', 'bar')
         kwargs = {'foo': 'bar'}
         jaeger_tracer_mock = mock.NonCallableMock()
         tracer = InspectorioTracer(jaeger_tracer_mock)
-        tracer.inject(*args, **kwargs)
-        jaeger_tracer_mock.inject.assert_called_once_with(*args, **kwargs)
+        getattr(tracer, method)(*args, **kwargs)
+        getattr(jaeger_tracer_mock, method).assert_called_once_with(
+            *args, **kwargs
+        )
+
+    def test_inject(self):
+        self._test_method('inject')
+
+    def test_extract(self):
+        self._test_method('extract')
 
     def test_start_span(self):
-        args = ('foo', 'bar')
-        kwargs = {'foo': 'bar'}
-        jaeger_tracer_mock = mock.NonCallableMock()
-        tracer = InspectorioTracer(jaeger_tracer_mock)
-        tracer.start_span(*args, **kwargs)
-        jaeger_tracer_mock.start_span.assert_called_once_with(*args, **kwargs)
+        self._test_method('start_span')
 
 
 TEST_ENV_VARIABLES = {
