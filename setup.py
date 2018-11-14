@@ -28,7 +28,7 @@ setup(
     description='Inspectorio Tracing Helper',
     install_requires=[
         'flask',
-        'flask-opentracing',
+        'flask-opentracing==0.2.0',
         'jaeger-client',
         'opentracing<2',
         'opentracing-instrumentation==' + OPENTRACING_INSTRUMENTATION_VERSION,
