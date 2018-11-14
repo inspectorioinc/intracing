@@ -44,6 +44,7 @@ TEST_ENV_VARIABLES = {
 
 def get_app():
     app = Flask(__name__)
+    Helper.tracing_configured = False
     configure_tracing(app)
     return app
 
@@ -168,3 +169,10 @@ class TestTracingHelper(object):
         get_instrumented_app()
         worker_init.send(None)
         apply_patches_mock.assert_called_once_with()
+
+    @mock.patch('intracing.intracing.TracingHelper._configure_tracing')
+    @mock.patch.dict(os.environ, TEST_ENV_VARIABLES)
+    def test_configure_twice(self, configure_tracing_mock, app):
+        assert Helper.tracing_configured
+        configure_tracing(app)
+        configure_tracing_mock.assert_not_called()

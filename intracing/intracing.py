@@ -33,6 +33,8 @@ class InspectorioTracer(FlaskTracer):
 
 class TracingHelper(object):
 
+    tracing_configured = False
+
     @staticmethod
     def requests_response_handler_hook(response, span):
         if not response.ok:
@@ -71,15 +73,22 @@ class TracingHelper(object):
         request.tracing_context.__exit__()
         return response
 
+    @staticmethod
+    def is_enabled(key):
+        value = os.getenv(key, '').lower()
+        return value in {'true', 'on', 'ok', 'y', 'yes', '1'}
+
     @classmethod
     def configure_tracing(cls, app):
-        def is_enabled(key):
-            value = os.getenv(key, '').lower()
-            return value in {'true', 'on', 'ok', 'y', 'yes', '1'}
 
-        if not is_enabled('TRACING_ENABLED'):
+        if not cls.is_enabled('TRACING_ENABLED'):
             return
 
+        if not cls.tracing_configured:
+            cls._configure_tracing(app)
+
+    @classmethod
+    def _configure_tracing(cls, app):
         service_name = os.environ['TRACING_SERVICE_NAME']
         reporting_host = os.getenv('TRACING_AGENT_HOST',
                                    DEFAULT_REPORTING_HOST)
@@ -96,7 +105,7 @@ class TracingHelper(object):
                     'reporting_host': reporting_host,
                     'reporting_port': reporting_port,
                 },
-                'logging': is_enabled('TRACING_LOGGING'),
+                'logging': cls.is_enabled('TRACING_LOGGING'),
             },
             service_name=service_name,
         )
@@ -122,6 +131,8 @@ class TracingHelper(object):
             @worker_init.connect(weak=False)
             def apply_patches(**kwargs):
                 cls.apply_patches()
+
+        cls.tracing_configured = True
 
 
 configure_tracing = TracingHelper.configure_tracing

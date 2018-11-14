@@ -4,10 +4,11 @@ stages:
 # TODO: simplify configuration using `extends` after migration to GitLab 11.3
 # https://docs.gitlab.com/ee/ci/yaml/README.html#extends
 
-.test: &test
+.test:
   stage: test
   script:
     - pipenv install --dev --skip-lock --system
+    - flake8
     - pytest
   coverage: '/TOTAL.+ ([0-9]{1,3}%)/'
   only:
@@ -23,13 +24,13 @@ stages:
     - /^chore\/.*$/
 
 test-2.7:
-  image: "inspectorio/python:2.7"
-  <<: *test
+  extends: .test
+  image: 'inspectorio/python:2.7'
 
 test-3.6:
-  image: "inspectorio/python:3.6"
-  <<: *test
+  extends: .test
+  image: 'inspectorio/python:3.6'
 
 test-3.7:
-  image: "inspectorio/python:3.7"
-  <<: *test
+  extends: .test
+  image: 'inspectorio/python:3.7'
