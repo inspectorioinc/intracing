@@ -2,24 +2,16 @@ import logging
 import os
 
 import opentracing
-from flask import request
-from flask_opentracing import FlaskTracer
+import six
 from jaeger_client.thrift_gen.jaeger.ttypes import Tag, TagType
 from jaeger_client.config import (
     Config, DEFAULT_REPORTING_HOST, DEFAULT_REPORTING_PORT
 )
 from opentracing.ext import tags
 from opentracing_instrumentation.client_hooks import install_all_patches
-from opentracing_instrumentation.request_context import RequestContextManager
 
 
-TAG_SPAN_KIND = Tag(key=tags.SPAN_KIND, vType=TagType.STRING,
-                    vStr=tags.SPAN_KIND_RPC_SERVER)
-TAG_COMPONENT = Tag(key=tags.COMPONENT, vType=TagType.STRING, vStr='Flask')
-TAG_ERROR = Tag(key=tags.ERROR, vType=TagType.BOOL, vBool=True)
-
-
-class InspectorioTracer(FlaskTracer):
+class InspectorioTracerMixin(object):
 
     def inject(self, *args, **kwargs):
         return self._tracer.inject(*args, **kwargs)
@@ -31,15 +23,35 @@ class InspectorioTracer(FlaskTracer):
         return self._tracer.start_span(*args, **kwargs)
 
 
+class TracingHelperMetaclass(type):
+
+    def __new__(mcs, name, bases, class_dict):
+        component = class_dict.get('COMPONENT')
+        if component:
+            class_dict['TAG_COMPONENT'] = Tag(
+                key=tags.COMPONENT, vType=TagType.STRING, vStr=component
+            )
+
+        return super(TracingHelperMetaclass, mcs).__new__(
+            mcs, name, bases, class_dict
+        )
+
+
+@six.add_metaclass(TracingHelperMetaclass)
 class TracingHelper(object):
 
-    tracing_configured = False
+    TAG_SPAN_KIND = Tag(key=tags.SPAN_KIND, vType=TagType.STRING,
+                        vStr=tags.SPAN_KIND_RPC_SERVER)
+    TAG_ERROR = Tag(key=tags.ERROR, vType=TagType.BOOL, vBool=True)
 
-    @staticmethod
-    def requests_response_handler_hook(response, span):
+    tracing_configured = False
+    config = None
+
+    @classmethod
+    def requests_response_handler_hook(cls, response, span):
         if not response.ok:
             with span.update_lock:
-                span.tags.append(TAG_ERROR)
+                span.tags.append(cls.TAG_ERROR)
 
     @classmethod
     def apply_patches(cls):
@@ -47,31 +59,24 @@ class TracingHelper(object):
             requests_response_handler_hook=cls.requests_response_handler_hook
         )
 
-    @staticmethod
-    def enter_request_context():
-        span = opentracing.tracer.get_span()
-        span.tags.append(TAG_SPAN_KIND)
-        span.tags.append(TAG_COMPONENT)
+    @classmethod
+    def set_request_tags(cls, span, method, url):
+        span.tags.append(cls.TAG_SPAN_KIND)
+        span.tags.append(cls.TAG_COMPONENT)
         span.tags.append(Tag(
-            key=tags.HTTP_METHOD, vType=TagType.STRING, vStr=request.method
+            key=tags.HTTP_METHOD, vType=TagType.STRING, vStr=method
         ))
         span.tags.append(Tag(
-            key=tags.HTTP_URL, vType=TagType.STRING, vStr=request.url
+            key=tags.HTTP_URL, vType=TagType.STRING, vStr=url
         ))
-        request.tracing_context = RequestContextManager(span)
-        request.tracing_context.__enter__()
 
-    @staticmethod
-    def exit_request_context(response):
-        span = opentracing.tracer.get_span()
-        status_code = response.status_code
+    @classmethod
+    def set_response_tags(cls, span, status_code):
         span.tags.append(Tag(
             key=tags.HTTP_STATUS_CODE, vType=TagType.LONG, vLong=status_code
         ))
         if not 200 <= status_code < 300:
-            span.tags.append(TAG_ERROR)
-        request.tracing_context.__exit__()
-        return response
+            span.tags.append(cls.TAG_ERROR)
 
     @staticmethod
     def is_enabled(key):
@@ -79,23 +84,23 @@ class TracingHelper(object):
         return value in {'true', 'on', 'ok', 'y', 'yes', '1'}
 
     @classmethod
-    def configure_tracing(cls, app):
+    def configure_tracing(cls, *args, **kwargs):
 
         if not cls.is_enabled('TRACING_ENABLED'):
             return
 
         if not cls.tracing_configured:
-            cls._configure_tracing(app)
+            cls._configure_tracing(*args, **kwargs)
 
     @classmethod
-    def _configure_tracing(cls, app):
+    def init_config(cls):
         service_name = os.environ['TRACING_SERVICE_NAME']
         reporting_host = os.getenv('TRACING_AGENT_HOST',
                                    DEFAULT_REPORTING_HOST)
         reporting_port = os.getenv('TRACING_AGENT_PORT',
                                    DEFAULT_REPORTING_PORT)
 
-        config = Config(
+        cls.config = Config(
             config={
                 'sampler': {
                     'type': 'const',
@@ -110,18 +115,18 @@ class TracingHelper(object):
             service_name=service_name,
         )
 
-        def init_jaeger_tracer():
-            logging.debug('Initializing Jaeger tracer')
+    @classmethod
+    def init_jaeger_tracer(cls):
+        logging.debug('Initializing Jaeger tracer')
 
-            # this call also sets opentracing.tracer
-            return config.new_tracer()
+        # this call also sets opentracing.tracer
+        return cls.config.new_tracer()
 
-        opentracing.tracer = InspectorioTracer(
-            init_jaeger_tracer, trace_all_requests=True, app=app
-        )
-        app.before_first_request(cls.apply_patches)
-        app.before_request(cls.enter_request_context)
-        app.after_request(cls.exit_request_context)
+    @classmethod
+    def _configure_tracing(cls, *args, **kwargs):
+        cls.init_config()
+        opentracing.tracer = cls.get_tracer(*args, **kwargs)
+        cls.configure_component(*args, **kwargs)
 
         try:
             from celery.signals import worker_init
@@ -133,6 +138,14 @@ class TracingHelper(object):
                 cls.apply_patches()
 
         cls.tracing_configured = True
+
+    @classmethod
+    def get_tracer(cls, *args, **kwargs):
+        raise NotImplementedError  # pragma: no cover
+
+    @classmethod
+    def configure_component(cls, *args, **kwargs):
+        raise NotImplementedError  # pragma: no cover
 
 
 configure_tracing = TracingHelper.configure_tracing

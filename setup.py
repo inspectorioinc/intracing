@@ -27,12 +27,15 @@ setup(
     version=get_version(),
     description='Inspectorio Tracing Helper',
     install_requires=[
-        'flask',
-        'flask-opentracing==0.2.0',
         'jaeger-client',
         'opentracing<2',
         'opentracing-instrumentation==' + OPENTRACING_INSTRUMENTATION_VERSION,
+        'six',
     ],
+    extras_require={
+        'django': ['django_opentracing==0.1.20'],
+        'flask': ['flask-opentracing==0.2.0'],
+    },
     dependency_links=[
         'git+https://github.com/Jamim/opentracing-python-instrumentation.git'
         '@feature/celery'

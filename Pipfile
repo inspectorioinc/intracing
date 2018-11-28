@@ -4,11 +4,12 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-flask = "*"
+django_opentracing = "==0.1.20"
 flask-opentracing = "==0.2.0"
 jaeger-client = "*"
 opentracing = "<2"
 opentracing-instrumentation = {git = "https://github.com/Jamim/opentracing-python-instrumentation.git", ref = "feature/celery"}
+six = "*"
 
 [dev-packages]
 celery = "*"
@@ -18,4 +19,6 @@ flake8-quotes = "*"
 mock = "*"
 pytest = "*"
 pytest-cov = "*"
+pytest-django = "*"
+pytest-pythonpath = "*"
 requests = "*"
