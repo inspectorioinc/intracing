@@ -39,6 +39,11 @@ class TestIntracingDjangoMiddleware(object):
                               url='http://testserver/',
                               status_code=200)
 
+    def test_django_not_found(self, client, reporter):
+        response = client.get('/foo')
+        assert response.status_code == 404
+        assert not reporter.spans
+
     @pytest.mark.parametrize('middleware', (None, []))
     @mock.patch.dict(sys.modules)
     def test_configure_component(self, middleware, client, reporter):

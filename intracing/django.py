@@ -33,8 +33,7 @@ class IntracingDjangoMiddleware(OpenTracingMiddleware, TracingHelper):
 
     @classmethod
     def get_tracer(cls):
-        opentracing.tracer = InspectorioDjangoTracer(cls.init_jaeger_tracer())
-        return opentracing.tracer
+        return InspectorioDjangoTracer(cls.init_jaeger_tracer())
 
     @classmethod
     def configure_component(cls):
@@ -61,6 +60,9 @@ class IntracingDjangoMiddleware(OpenTracingMiddleware, TracingHelper):
 
     def process_response(self, request, response):
         span = opentracing.tracer.get_span(request)
+        if span is None:
+            return response
+
         self.set_response_tags(span, response.status_code)
         response = super(IntracingDjangoMiddleware, self).process_response(
             request, response
