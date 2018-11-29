@@ -19,12 +19,17 @@ class IntracingAppConfig(AppConfig):
 
 class InspectorioDjangoTracer(InspectorioTracerMixin, DjangoTracer):
 
-    _tracer = None
-
-    def __init__(self, tracer):
+    def __init__(self, tracer_getter):
+        self.__tracer = None
+        self.__tracer_getter = tracer_getter
         self._current_spans = {}
-        self._tracer = tracer
         self._trace_all = True
+
+    @property
+    def _tracer(self):
+        if not self.__tracer:
+            self.__tracer = self.__tracer_getter()
+        return self.__tracer
 
 
 class IntracingDjangoMiddleware(OpenTracingMiddleware, TracingHelper):
@@ -33,7 +38,7 @@ class IntracingDjangoMiddleware(OpenTracingMiddleware, TracingHelper):
 
     @classmethod
     def get_tracer(cls):
-        return InspectorioDjangoTracer(cls.init_jaeger_tracer())
+        return InspectorioDjangoTracer(cls.init_jaeger_tracer)
 
     @classmethod
     def configure_component(cls):
