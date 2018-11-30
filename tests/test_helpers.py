@@ -1,6 +1,7 @@
 import mock
 import pytest
 
+from intracing.base import TracingHelper
 from intracing.django import IntracingDjangoMiddleware
 from intracing.flask import FlaskTracingHelper
 
@@ -8,6 +9,7 @@ from intracing.flask import FlaskTracingHelper
 class TestHelpers(object):
 
     @pytest.mark.parametrize('helper,args', (
+            (TracingHelper, []),
             (IntracingDjangoMiddleware, []),
             (FlaskTracingHelper, [mock.Mock()]),
     ))

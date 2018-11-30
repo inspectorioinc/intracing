@@ -42,7 +42,7 @@ class IntracingDjangoMiddleware(OpenTracingMiddleware, TracingHelper):
 
     @classmethod
     def configure_component(cls):
-        cls.apply_patches()
+        super(IntracingDjangoMiddleware, cls).configure_component()
         middleware_path = 'intracing.' + cls.__name__
         if settings.MIDDLEWARE is None:
             settings.MIDDLEWARE = []

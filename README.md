@@ -42,6 +42,15 @@ INSTALLED_APPS = [
 ]
 ```
 
+#### Other
+
+You can instrument just libraries, such as `requests`, `boto3`, etc.
+```python
+from intracing.base import TracingHelper
+
+TracingHelper.configure_tracing()
+```
+
 ### Configuration
 
 To enable tracing, you must provide both

@@ -141,11 +141,11 @@ class TracingHelper(object):
 
     @classmethod
     def get_tracer(cls, *args, **kwargs):
-        raise NotImplementedError  # pragma: no cover
+        return cls.init_jaeger_tracer()
 
     @classmethod
     def configure_component(cls, *args, **kwargs):
-        raise NotImplementedError  # pragma: no cover
+        cls.apply_patches()
 
 
 configure_tracing = TracingHelper.configure_tracing
