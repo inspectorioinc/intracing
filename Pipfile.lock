@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "d201a1f0013cb3afb89981d7601f90ec6a15ae709862385f06890f00c2b6a92e"
+            "sha256": "f7c1856331b508a2d98c4cee17c74bbb3aee37bd27560e76983603218fd9f369"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -23,10 +23,10 @@
         },
         "django": {
             "hashes": [
-                "sha256:1ffab268ada3d5684c05ba7ce776eaeedef360712358d6a6b340ae9f16486916",
-                "sha256:dd46d87af4c1bf54f4c926c3cfa41dc2b5c15782f15e4329752ce65f5dad1c37"
+                "sha256:068d51054083d06ceb32ce02b7203f1854256047a0d58682677dd4f81bceabd7",
+                "sha256:55409a056b27e6d1246f19ede41c6c610e4cab549c005b62cbeefabc6433356b"
             ],
-            "version": "==2.1.3"
+            "version": "==2.1.4"
         },
         "django-opentracing": {
             "hashes": [
@@ -61,10 +61,10 @@
         },
         "jaeger-client": {
             "hashes": [
-                "sha256:8462a70b45a98bdd2d69cc83fd830abda079a2a5a1e805892a639c23f5079264"
+                "sha256:12e44bafa4a9a3fad1187183be8013e1ed92c06d5641492fc63e9619d6ec39ce"
             ],
             "index": "pypi",
-            "version": "==3.12.0"
+            "version": "==3.13.0"
         },
         "jinja2": {
             "hashes": [
@@ -115,7 +115,7 @@
         },
         "opentracing-instrumentation": {
             "git": "https://github.com/Jamim/opentracing-python-instrumentation.git",
-            "ref": "3a291824fa99d77b027116647a125e93788f0693"
+            "ref": "3484f5b1ad67c317564439c707e722ceb110a385"
         },
         "pytz": {
             "hashes": [
@@ -187,9 +187,9 @@
         },
         "billiard": {
             "hashes": [
-                "sha256:ed65448da5877b5558f19d2f7f11f8355ea76b3e63e1c0a6059f47cfae5f1c84"
+                "sha256:42d9a227401ac4fba892918bba0a0c409def5435c4b483267ebfe821afaaba0e"
             ],
-            "version": "==3.5.0.4"
+            "version": "==3.5.0.5"
         },
         "celery": {
             "hashes": [
@@ -281,10 +281,10 @@
         },
         "kombu": {
             "hashes": [
-                "sha256:86adec6c60f63124e2082ea8481bbe4ebe04fde8ebed32c177c7f0cd2c1c9082",
-                "sha256:b274db3a4eacc4789aeb24e1de3e460586db7c4fc8610f7adcc7a3a1709a60af"
+                "sha256:52763f41077e25fe7e2f17b8319d8a7b7ab953a888c49d9e4e0464fceb716896",
+                "sha256:9bf7d37b93249b76a03afb7bbcf7149a358b6079ca2431e725414b1caa10922c"
             ],
-            "version": "==4.2.1"
+            "version": "==4.2.2"
         },
         "mccabe": {
             "hashes": [

@@ -45,6 +45,8 @@ class TracingHelper(object):
     TAG_ERROR = Tag(key=tags.ERROR, vType=TagType.BOOL, vBool=True)
 
     tracing_configured = False
+    store_http_body = None
+    http_body_size_limit = None
     config = None
 
     @classmethod
@@ -60,7 +62,29 @@ class TracingHelper(object):
         )
 
     @classmethod
-    def set_request_tags(cls, span, method, url):
+    def set_content_type_tag(cls, span, origin, content_type):
+        if content_type:
+            span.tags.append(Tag(
+                key='http.{}.content_type'.format(origin),
+                vType=TagType.STRING,
+                vStr=content_type
+            ))
+
+    @classmethod
+    def set_http_body_tag(cls, span, origin, body):
+        if body and cls.store_http_body and (
+                cls.http_body_size_limit is None
+                or len(body) <= cls.http_body_size_limit
+        ):
+            span.tags.append(Tag(
+                key='http.{}.body'.format(origin),
+                vType=TagType.STRING,
+                vStr=body
+            ))
+
+    @classmethod
+    def set_request_tags(cls, span, method, url,
+                         content_type=None, body=None):
         span.tags.append(cls.TAG_SPAN_KIND)
         span.tags.append(cls.TAG_COMPONENT)
         span.tags.append(Tag(
@@ -69,9 +93,14 @@ class TracingHelper(object):
         span.tags.append(Tag(
             key=tags.HTTP_URL, vType=TagType.STRING, vStr=url
         ))
+        cls.set_content_type_tag(span, 'request', content_type)
+        cls.set_http_body_tag(span, 'request', body)
 
     @classmethod
-    def set_response_tags(cls, span, status_code):
+    def set_response_tags(cls, span, status_code,
+                          content_type=None, body=None):
+        cls.set_content_type_tag(span, 'response', content_type)
+        cls.set_http_body_tag(span, 'response', body)
         span.tags.append(Tag(
             key=tags.HTTP_STATUS_CODE, vType=TagType.LONG, vLong=status_code
         ))
@@ -94,6 +123,11 @@ class TracingHelper(object):
 
     @classmethod
     def init_config(cls):
+        cls.store_http_body = cls.is_enabled('TRACING_STORE_HTTP_BODY')
+        http_body_size_limit = os.getenv('TRACING_HTTP_BODY_SIZE_LIMIT')
+        if http_body_size_limit:
+            cls.http_body_size_limit = int(http_body_size_limit)
+
         service_name = os.environ['TRACING_SERVICE_NAME']
         reporting_host = os.getenv('TRACING_AGENT_HOST',
                                    DEFAULT_REPORTING_HOST)

@@ -73,6 +73,17 @@ You can also configure `APM` agent location using
 Usually you should provide at least `TRACING_AGENT_HOST` variable,
 since the default value is `localhost`.
 
+HTTP request/response body data can be stored in span with tags.  
+This feature is disabled by default.
+You have to set `TRACING_STORE_HTTP_BODY` to `1`.  
+Filtering of too large HTTP bodies can be configured using
+`TRACING_HTTP_BODY_SIZE_LIMIT` variable.
+```bash
+TRACING_STORE_HTTP_BODY=1
+TRACING_HTTP_BODY_SIZE_LIMIT=65536  # 64 KiB
+```
+Please be aware that there is no limit by default.
+
 Logging can be enabled using `TRACING_LOGGING` variable.
 
 ### Testing

@@ -1,7 +1,11 @@
-import mock
 import sys
 
+import mock
+import pytest
+
 from six.moves import builtins
+
+from intracing import write_string
 
 original_import = __import__
 
@@ -22,3 +26,14 @@ def test_init():
         import intracing
         assert not hasattr(intracing, 'default_app_config')
         assert not hasattr(intracing, 'configure_tracing')
+
+
+@pytest.mark.parametrize('value,expected', (
+        ('test', b'test'),
+        (b'test', b'test'),
+        (u'test', b'test'),
+))
+def test_write_string(value, expected):
+    proto = mock.Mock()
+    write_string(proto, value)
+    proto.writeBinary.assert_called_once_with(expected)

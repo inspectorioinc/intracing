@@ -38,7 +38,7 @@ setup(
     },
     dependency_links=[
         'git+https://github.com/Jamim/opentracing-python-instrumentation.git'
-        '@feature/celery'
+        '@fix/boto3-dynamodb-describe-table'
         '#egg=opentracing_instrumentation-{version}'.format(
             version=OPENTRACING_INSTRUMENTATION_VERSION
         )

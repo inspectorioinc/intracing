@@ -1,6 +1,8 @@
 import mock
 import pytest
 import requests
+from faker import Faker
+from flask import Response
 from jaeger_client.constants import TRACE_ID_HEADER
 from jaeger_client.thrift_gen.jaeger.ttypes import TagType
 from jaeger_client.reporter import InMemoryReporter
@@ -9,7 +11,11 @@ from opentracing.ext import tags
 from intracing.flask import FlaskTracingHelper as Helper
 
 from .utils import (
-    assert_http_view_span, assert_tag, disable_tracing, get_flask_app
+    assert_http_view_span,
+    assert_tag,
+    disable_tracing,
+    get_flask_app,
+    with_http_body_size_limit,
 )
 
 
@@ -76,16 +82,60 @@ class TestFlaskTracingHelper(object):
     @pytest.mark.parametrize('method', ('GET', 'POST', 'PUT', 'DELETE'))
     @pytest.mark.parametrize('status_code', (200, 404))
     def test_tag_setting(self, app, method, status_code, reporter):
+        request_content_type = 'text/plain'
+        request_data = Faker().text().encode('utf-8')
+        response_content_type = 'application/json'
+        response_data = b'{"foo": "bar"}'
 
         @app.route('/', methods=[method])
         def get():
-            return '', status_code
+            return Response(response_data, status=status_code,
+                            content_type=response_content_type)
 
-        response = app.test_client().open('http://localhost/', method=method)
+        response = app.test_client().open('http://localhost/',
+                                          method=method,
+                                          data=request_data,
+                                          content_type=request_content_type)
         assert response.status_code == status_code
 
         assert_http_view_span(reporter.spans[-1],
                               component='Flask',
                               method=method,
                               url='http://localhost/',
-                              status_code=status_code)
+                              status_code=status_code,
+                              request_content_type=request_content_type,
+                              request_body=request_data,
+                              response_content_type=response_content_type,
+                              response_body=response_data)
+
+    @with_http_body_size_limit(limit=50)
+    def test_http_body_size_limit_fitted(self, limit, reporter):
+        data = Faker().text(limit).encode('utf-8')
+        app = get_flask_app()
+        assert Helper.http_body_size_limit == limit
+
+        @app.route('/')
+        def get():
+            return data, 200
+
+        response = app.test_client().get('/')
+        assert response.status_code == 200
+
+        assert_tag(reporter.spans[0].tags[-2], key='http.response.body',
+                   vType=TagType.STRING, vStr=data)
+
+    @with_http_body_size_limit(limit=50)
+    def test_http_body_size_limit_exceeded(self, limit, reporter):
+        data = b'0' * (limit + 1)
+        app = get_flask_app()
+        assert Helper.http_body_size_limit == limit
+
+        @app.route('/')
+        def get():
+            return data, 200
+
+        response = app.test_client().get('/')
+        assert response.status_code == 200
+
+        for tag in reporter.spans[0].tags:
+            assert tag.key != 'http.response.body'

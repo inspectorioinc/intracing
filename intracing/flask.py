@@ -31,14 +31,25 @@ class FlaskTracingHelper(TracingHelper):
     @classmethod
     def enter_request_context(cls):
         span = opentracing.tracer.get_span()
-        cls.set_request_tags(span, request.method, request.url)
+        cls.set_request_tags(
+            span,
+            request.method,
+            request.url,
+            request.content_type,
+            request.data,
+        )
         request.tracing_context = RequestContextManager(span)
         request.tracing_context.__enter__()
 
     @classmethod
     def exit_request_context(cls, response):
         span = opentracing.tracer.get_span()
-        cls.set_response_tags(span, response.status_code)
+        cls.set_response_tags(
+            span,
+            response.status_code,
+            response.content_type,
+            response.data
+        )
         request.tracing_context.__exit__()
         return response
 
