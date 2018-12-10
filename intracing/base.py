@@ -10,6 +10,8 @@ from jaeger_client.config import (
 from opentracing.ext import tags
 from opentracing_instrumentation.client_hooks import install_all_patches
 
+import intracing
+
 
 class InspectorioTracerMixin(object):
 
@@ -83,8 +85,17 @@ class TracingHelper(object):
             ))
 
     @classmethod
-    def set_request_tags(cls, span, method, url,
-                         content_type=None, body=None):
+    def set_user_agent_tag(cls, span, user_agent):
+        if user_agent:
+            span.tags.append(Tag(
+                key='http.user_agent',
+                vType=TagType.STRING,
+                vStr=user_agent
+            ))
+
+    @classmethod
+    def set_request_tags(cls, span, method, url, user_agent,
+                         content_type, body):
         span.tags.append(cls.TAG_SPAN_KIND)
         span.tags.append(cls.TAG_COMPONENT)
         span.tags.append(Tag(
@@ -93,12 +104,12 @@ class TracingHelper(object):
         span.tags.append(Tag(
             key=tags.HTTP_URL, vType=TagType.STRING, vStr=url
         ))
+        cls.set_user_agent_tag(span, user_agent)
         cls.set_content_type_tag(span, 'request', content_type)
         cls.set_http_body_tag(span, 'request', body)
 
     @classmethod
-    def set_response_tags(cls, span, status_code,
-                          content_type=None, body=None):
+    def set_response_tags(cls, span, status_code, content_type, body):
         cls.set_content_type_tag(span, 'response', content_type)
         cls.set_http_body_tag(span, 'response', body)
         span.tags.append(Tag(
@@ -145,6 +156,9 @@ class TracingHelper(object):
                     'reporting_port': reporting_port,
                 },
                 'logging': cls.is_enabled('TRACING_LOGGING'),
+                'tags': {
+                    'intracing.version': intracing.__version__,
+                },
             },
             service_name=service_name,
         )

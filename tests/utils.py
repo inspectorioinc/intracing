@@ -24,38 +24,26 @@ def assert_next_tag(span_tags, **attrs):
     assert_tag(span_tags.pop(0), **attrs)
 
 
-def assert_http_view_span(span, component, method, url, status_code,
-                          request_content_type=None, request_body=None,
-                          response_content_type=None, response_body=None):
+def assert_http_view_span(
+        span, component, method, url, user_agent, status_code,
+        request_content_type, request_body,
+        response_content_type, response_body
+):
     span_tags = span.tags[2:]
 
-    assert_next_tag(span_tags, key=tags.SPAN_KIND,
-                    vType=TagType.STRING, vStr=tags.SPAN_KIND_RPC_SERVER)
-
-    assert_next_tag(span_tags, key=tags.COMPONENT,
-                    vType=TagType.STRING, vStr=component)
-
-    assert_next_tag(span_tags, key=tags.HTTP_METHOD,
-                    vType=TagType.STRING, vStr=method)
-
-    assert_next_tag(span_tags, key=tags.HTTP_URL,
-                    vType=TagType.STRING, vStr=url)
-
-    if request_content_type:
-        assert_next_tag(span_tags, key='http.request.content_type',
-                        vType=TagType.STRING, vStr=request_content_type)
-
-    if request_body:
-        assert_next_tag(span_tags, key='http.request.body',
-                        vType=TagType.STRING, vStr=request_body)
-
-    if response_content_type:
-        assert_next_tag(span_tags, key='http.response.content_type',
-                        vType=TagType.STRING, vStr=response_content_type)
-
-    if response_body:
-        assert_next_tag(span_tags, key='http.response.body',
-                        vType=TagType.STRING, vStr=response_body)
+    expected_string_tags = (
+        (tags.SPAN_KIND, tags.SPAN_KIND_RPC_SERVER),
+        (tags.COMPONENT, component),
+        (tags.HTTP_METHOD, method),
+        (tags.HTTP_URL, url),
+        ('http.user_agent', user_agent),
+        ('http.request.content_type', request_content_type),
+        ('http.request.body', request_body),
+        ('http.response.content_type', response_content_type),
+        ('http.response.body', response_body),
+    )
+    for key, value in expected_string_tags:
+        assert_next_tag(span_tags, key=key, vType=TagType.STRING, vStr=value)
 
     assert_next_tag(span_tags, key=tags.HTTP_STATUS_CODE,
                     vType=TagType.LONG, vLong=status_code)

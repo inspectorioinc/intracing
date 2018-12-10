@@ -92,16 +92,19 @@ class TestFlaskTracingHelper(object):
             return Response(response_data, status=status_code,
                             content_type=response_content_type)
 
-        response = app.test_client().open('http://localhost/',
-                                          method=method,
-                                          data=request_data,
-                                          content_type=request_content_type)
+        test_client = app.test_client()
+        response = test_client.open('http://localhost/',
+                                    method=method,
+                                    data=request_data,
+                                    content_type=request_content_type)
         assert response.status_code == status_code
 
+        user_agent = test_client.environ_base['HTTP_USER_AGENT']
         assert_http_view_span(reporter.spans[-1],
                               component='Flask',
                               method=method,
                               url='http://localhost/',
+                              user_agent=user_agent,
                               status_code=status_code,
                               request_content_type=request_content_type,
                               request_body=request_data,

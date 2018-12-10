@@ -59,7 +59,12 @@ class IntracingDjangoMiddleware(OpenTracingMiddleware, TracingHelper):
         )
         span = opentracing.tracer.get_span(request)
         self.set_request_tags(
-            span, request.method, request.get_raw_uri()
+            span,
+            request.method,
+            request.get_raw_uri(),
+            request.META.get('HTTP_USER_AGENT'),
+            request.content_type,
+            request.body,
         )
         request.tracing_context = RequestContextManager(span)
         request.tracing_context.__enter__()
@@ -69,7 +74,12 @@ class IntracingDjangoMiddleware(OpenTracingMiddleware, TracingHelper):
         if span is None:
             return response
 
-        self.set_response_tags(span, response.status_code)
+        self.set_response_tags(
+            span,
+            response.status_code,
+            response.get('Content-Type'),
+            response.content,
+        )
         response = super(IntracingDjangoMiddleware, self).process_response(
             request, response
         )

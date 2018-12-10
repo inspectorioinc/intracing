@@ -35,6 +35,7 @@ class FlaskTracingHelper(TracingHelper):
             span,
             request.method,
             request.url,
+            request.user_agent.string,
             request.content_type,
             request.data,
         )
