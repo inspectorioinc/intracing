@@ -10,7 +10,7 @@ from jaeger_client.reporter import InMemoryReporter
 
 from intracing.django import IntracingDjangoMiddleware
 
-from .utils import assert_http_view_span
+from .utils import assert_http_view_span, assert_not_contain_tag
 from .django_app.urls import RESPONSE_CONTENT_TYPE, RESPONSE_DATA
 
 
@@ -65,8 +65,7 @@ class TestIntracingDjangoMiddleware(object):
 
     def test_django_with_no_user_agent(self, client, reporter):
         view_span = self._test_django(client, reporter)
-        for tag in view_span.tags:
-            assert tag.key != 'http.user_agent'
+        assert_not_contain_tag(view_span.tags, 'http.user_agent')
 
     def test_django_not_found(self, client, reporter):
         response = client.get('/foo')

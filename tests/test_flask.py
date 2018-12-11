@@ -1,8 +1,9 @@
 import mock
 import pytest
 import requests
+import six
 from faker import Faker
-from flask import Response
+from flask import Response, send_file
 from jaeger_client.constants import TRACE_ID_HEADER
 from jaeger_client.thrift_gen.jaeger.ttypes import TagType
 from jaeger_client.reporter import InMemoryReporter
@@ -12,6 +13,7 @@ from intracing.flask import FlaskTracingHelper as Helper
 
 from .utils import (
     assert_http_view_span,
+    assert_not_contain_tag,
     assert_tag,
     disable_tracing,
     get_flask_app,
@@ -76,8 +78,7 @@ class TestFlaskTracingHelper(object):
             assert_tag(tag_error, key=tags.ERROR,
                        vType=TagType.BOOL, vBool=True)
         else:
-            for tag in reporter.spans[0].tags:
-                assert tag.key != tags.ERROR
+            assert_not_contain_tag(reporter.spans[0].tags, tags.ERROR)
 
     @pytest.mark.parametrize('method', ('GET', 'POST', 'PUT', 'DELETE'))
     @pytest.mark.parametrize('status_code', (200, 404))
@@ -140,5 +141,18 @@ class TestFlaskTracingHelper(object):
         response = app.test_client().get('/')
         assert response.status_code == 200
 
-        for tag in reporter.spans[0].tags:
-            assert tag.key != 'http.response.body'
+        assert_not_contain_tag(reporter.spans[0].tags, 'http.response.body')
+
+    def test_stream_handling(self, app, reporter):
+        response_data = b'{"foo": "bar"}'
+
+        @app.route('/')
+        def get():
+            return send_file(six.BytesIO(response_data),
+                             mimetype='application/json')
+
+        response = app.test_client().get('/')
+        assert response.status_code == 200
+        assert response.data == response_data
+
+        assert_not_contain_tag(reporter.spans[0].tags, 'http.response.body')

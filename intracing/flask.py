@@ -45,11 +45,12 @@ class FlaskTracingHelper(TracingHelper):
     @classmethod
     def exit_request_context(cls, response):
         span = opentracing.tracer.get_span()
+        body = response.data if not response.direct_passthrough else None
         cls.set_response_tags(
             span,
             response.status_code,
             response.content_type,
-            response.data
+            body,
         )
         request.tracing_context.__exit__()
         return response

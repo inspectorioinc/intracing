@@ -24,6 +24,11 @@ def assert_next_tag(span_tags, **attrs):
     assert_tag(span_tags.pop(0), **attrs)
 
 
+def assert_not_contain_tag(span_tags, key):
+    for tag in span_tags:
+        assert tag.key != key
+
+
 def assert_http_view_span(
         span, component, method, url, user_agent, status_code,
         request_content_type, request_body,
@@ -53,8 +58,7 @@ def assert_http_view_span(
         assert_next_tag(tag_error, key=tags.ERROR,
                         vType=TagType.BOOL, vBool=True)
     else:
-        for tag in span_tags:
-            assert tag.key != tags.ERROR
+        assert_not_contain_tag(span_tags, tags.ERROR)
 
 
 def disable_tracing(func):
