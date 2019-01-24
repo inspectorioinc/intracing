@@ -95,5 +95,5 @@ The following versions of Python interpreter should be available locally:
 
 Use [tox](https://tox.readthedocs.io/en/latest/) to run tests.
 ```bash
-PIP_PROCESS_DEPENDENCY_LINKS=1 tox
+tox
 ```

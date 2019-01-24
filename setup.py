@@ -3,8 +3,13 @@ import re
 
 from setuptools import find_packages, setup
 
-OPENTRACING_INSTRUMENTATION_VERSION = '2.5.0.dev0'
 PACKAGE_NAME = 'intracing'
+
+OPENTRACING_INSTRUMENTATION_LINK = (
+    'git+https://github.com/Jamim/opentracing-python-instrumentation.git'
+    '@fix/boto3-dynamodb-describe-table'
+    '#egg=opentracing_instrumentation'
+)
 
 
 def get_version():
@@ -29,20 +34,13 @@ setup(
     install_requires=[
         'jaeger-client',
         'opentracing<2',
-        'opentracing-instrumentation==' + OPENTRACING_INSTRUMENTATION_VERSION,
+        'opentracing-instrumentation @ ' + OPENTRACING_INSTRUMENTATION_LINK,
         'six',
     ],
     extras_require={
         'django': ['django_opentracing==0.1.20'],
         'flask': ['flask-opentracing==0.2.0'],
     },
-    dependency_links=[
-        'git+https://github.com/Jamim/opentracing-python-instrumentation.git'
-        '@fix/boto3-dynamodb-describe-table'
-        '#egg=opentracing_instrumentation-{version}'.format(
-            version=OPENTRACING_INSTRUMENTATION_VERSION
-        )
-    ],
     packages=find_packages(
         exclude=['tests']
     )
