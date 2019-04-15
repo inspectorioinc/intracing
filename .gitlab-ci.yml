@@ -5,6 +5,7 @@ stages:
   stage: test
   script:
     - pipenv install --dev --skip-lock --system
+    - pipenv check --system
     - flake8
     - pytest
   coverage: '/TOTAL.+ ([0-9]{1,3}%)/'
