@@ -32,7 +32,7 @@ setup(
     version=get_version(),
     description='Inspectorio Tracing Helper',
     install_requires=[
-        'jaeger-client',
+        'jaeger-client<4',
         'opentracing<2',
         'opentracing-instrumentation @ ' + OPENTRACING_INSTRUMENTATION_LINK,
         'six',
