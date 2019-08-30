@@ -5,10 +5,10 @@ from flask import request
 from flask_opentracing import FlaskTracer
 from opentracing_instrumentation.request_context import RequestContextManager
 
-from .base import InspectorioTracerMixin, TracingHelper
+from .base import IntracingTracerMixin, TracingHelper
 
 
-class InspectorioFlaskTracer(InspectorioTracerMixin, FlaskTracer):
+class IntracingFlaskTracer(IntracingTracerMixin, FlaskTracer):
     pass
 
 
@@ -18,7 +18,7 @@ class FlaskTracingHelper(TracingHelper):
 
     @classmethod
     def get_tracer(cls, app):
-        return InspectorioFlaskTracer(
+        return IntracingFlaskTracer(
             cls.init_jaeger_tracer, trace_all_requests=True, app=app
         )
 

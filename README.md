@@ -1,4 +1,4 @@
-# Inspectorio tracing
+# Intracing
 
 This library provides helpers that simplifies
 [instrumentation](https://en.wikipedia.org/wiki/Instrumentation_(computer_programming))
@@ -14,7 +14,7 @@ as a backend for trace collection.
 Starting from `1.1.0` version, you have to use `django` or `flask` extras
 in your `Pipfile` in purpose to install corresponding dependencies, e.g.
 ```toml
-intracing = {git = "ssh://git@gitlab.inspectorio.com/saas/libs/inspectorio-tracing.git", ref = "v1.1.0", extras = ["django"]}
+intracing = {git = "https://github.com/inspectorioinc/intracing.git", ref = "v1.1.9", extras = ["django"]}
 ```
 
 ### Usage

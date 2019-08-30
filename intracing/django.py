@@ -6,18 +6,17 @@ from django.conf import settings
 from django_opentracing import DjangoTracer, OpenTracingMiddleware
 from opentracing_instrumentation.request_context import RequestContextManager
 
-from intracing.base import InspectorioTracerMixin, TracingHelper
+from intracing.base import IntracingTracerMixin, TracingHelper
 
 
 class IntracingAppConfig(AppConfig):
     name = 'intracing'
-    verbose_name = 'Inspectorio Tracing helper'
 
     def ready(self):
         IntracingDjangoMiddleware.configure_tracing()
 
 
-class InspectorioDjangoTracer(InspectorioTracerMixin, DjangoTracer):
+class IntracingDjangoTracer(IntracingTracerMixin, DjangoTracer):
 
     def __init__(self, tracer_getter):
         self.__tracer = None
@@ -38,7 +37,7 @@ class IntracingDjangoMiddleware(OpenTracingMiddleware, TracingHelper):
 
     @classmethod
     def get_tracer(cls):
-        return InspectorioDjangoTracer(cls.init_jaeger_tracer)
+        return IntracingDjangoTracer(cls.init_jaeger_tracer)
 
     @classmethod
     def configure_component(cls):

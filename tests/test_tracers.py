@@ -1,16 +1,16 @@
 import mock
 import pytest
 
-from intracing.django import InspectorioDjangoTracer
-from intracing.flask import InspectorioFlaskTracer
+from intracing.django import IntracingDjangoTracer
+from intracing.flask import IntracingFlaskTracer
 
 
 class TestTracers(object):
 
     @pytest.mark.parametrize('method', ('inject', 'extract', 'start_span'))
     @pytest.mark.parametrize('tracer_class', (
-            InspectorioDjangoTracer,
-            InspectorioFlaskTracer,
+            IntracingDjangoTracer,
+            IntracingFlaskTracer,
     ))
     def test_tracer_method(self, method, tracer_class):
         args = ('foo', 'bar')

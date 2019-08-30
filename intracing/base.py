@@ -13,7 +13,7 @@ from opentracing_instrumentation.client_hooks import install_all_patches
 import intracing
 
 
-class InspectorioTracerMixin(object):
+class IntracingTracerMixin(object):
 
     def inject(self, *args, **kwargs):
         return self._tracer.inject(*args, **kwargs)
