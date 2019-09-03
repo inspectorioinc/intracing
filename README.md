@@ -4,7 +4,7 @@ This library provides helpers that simplifies
 [instrumentation](https://en.wikipedia.org/wiki/Instrumentation_(computer_programming))
 of `Django` and `Flask` web applications
 for distributed trace collection following
-[OpenTracing](http://opentracing.io/documentation/) specification.
+[OpenTracing](https://opentracing.io/docs/) specification.
 Currently, it only supports [Jaeger](https://github.com/jaegertracing/jaeger)
 as a backend for trace collection.
 
