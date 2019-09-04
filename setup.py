@@ -8,7 +8,7 @@ REPOSITORY_URL = 'https://github.com/inspectorioinc/intracing'
 
 OPENTRACING_INSTRUMENTATION_LINK = (
     'git+https://github.com/Jamim/opentracing-python-instrumentation.git'
-    '@fix/boto3-dynamodb-describe-table'
+    '@fix/psycopg2'
     '#egg=opentracing_instrumentation'
 )
 

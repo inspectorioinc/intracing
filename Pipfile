@@ -8,7 +8,7 @@ django_opentracing = "==0.1.20"
 flask-opentracing = "==0.2.0"
 jaeger-client = "<4"
 opentracing = "<2"
-opentracing-instrumentation = {git = "https://github.com/Jamim/opentracing-python-instrumentation.git", ref = "fix/boto3-dynamodb-describe-table"}
+opentracing-instrumentation = {git = "https://github.com/Jamim/opentracing-python-instrumentation.git", ref = "fix/psycopg2"}
 six = "*"
 
 [dev-packages]

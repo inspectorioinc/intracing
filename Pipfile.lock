@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "effb67adf885ca947fb425cbe01e2b211491c5bc46d80970ce8f392892e21f78"
+            "sha256": "d692d809dd1d990a8a453da6ae204ccb6aced95b55be8fadd8a79199b1ad0109"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -115,7 +115,7 @@
         },
         "opentracing-instrumentation": {
             "git": "https://github.com/Jamim/opentracing-python-instrumentation.git",
-            "ref": "3484f5b1ad67c317564439c707e722ceb110a385"
+            "ref": "d09ea423fc13aeeba3282ee393fb8080ca28bdf7"
         },
         "pytz": {
             "hashes": [
