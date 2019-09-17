@@ -7,10 +7,11 @@ from django.conf import settings
 from django.test.client import Client
 from faker import Faker
 from jaeger_client.reporter import InMemoryReporter
+from jaeger_client.thrift_gen.jaeger.ttypes import TagType
 
 from intracing.django import IntracingDjangoMiddleware
 
-from .utils import assert_http_view_span, assert_not_contain_tag
+from .utils import assert_http_view_span, assert_not_contain_tag, assert_tag
 from .django_app.urls import RESPONSE_CONTENT_TYPE, RESPONSE_DATA
 
 
@@ -66,6 +67,22 @@ class TestIntracingDjangoMiddleware(object):
     def test_django_with_no_user_agent(self, client, reporter):
         view_span = self._test_django(client, reporter)
         assert_not_contain_tag(view_span.tags, 'http.user_agent')
+
+    @mock.patch.object(settings, 'DATA_UPLOAD_MAX_MEMORY_SIZE', 1024)
+    def test_django_data_upload_limit_above(self, client, reporter):
+        view_span = self._test_django(client, reporter,
+                                      data=Faker().text(2048).encode('utf-8'),
+                                      content_type='text/plain')
+        assert_not_contain_tag(view_span.tags, 'http.request.body')
+
+    @mock.patch.object(settings, 'DATA_UPLOAD_MAX_MEMORY_SIZE', 1024)
+    def test_django_data_upload_limit_below(self, client, reporter):
+        request_data = Faker().text(512).encode('utf-8')
+        view_span = self._test_django(client, reporter,
+                                      data=request_data,
+                                      content_type='text/plain')
+        assert_tag(view_span.tags[-4], key='http.request.body',
+                   vType=TagType.STRING, vStr=request_data)
 
     def test_django_not_found(self, client, reporter):
         response = client.get('/foo')

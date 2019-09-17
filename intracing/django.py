@@ -52,6 +52,17 @@ class IntracingDjangoMiddleware(OpenTracingMiddleware, TracingHelper):
         self.get_response = get_response
         self._tracer = opentracing.tracer
 
+    def _get_request_body(self, request):
+        # we should avoid getting of the body
+        # in case it would cause an exception
+        if self.store_http_body and (
+                settings.DATA_UPLOAD_MAX_MEMORY_SIZE is None or
+                int(
+                    request.META.get('CONTENT_LENGTH') or 0
+                ) <= settings.DATA_UPLOAD_MAX_MEMORY_SIZE
+        ):
+            return request.body
+
     def process_view(self, request, view_func, view_args, view_kwargs):
         super(IntracingDjangoMiddleware, self).process_view(
             request, view_func, view_args, view_kwargs
@@ -63,7 +74,7 @@ class IntracingDjangoMiddleware(OpenTracingMiddleware, TracingHelper):
             request.get_raw_uri(),
             request.META.get('HTTP_USER_AGENT'),
             request.content_type,
-            request.body,
+            self._get_request_body(request),
         )
         request.tracing_context = RequestContextManager(span)
         request.tracing_context.__enter__()
