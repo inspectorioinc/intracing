@@ -5,7 +5,7 @@ python:
   - '3.5'
   - '3.6'
   - '3.7'
-  - '3.8-dev'
+  - '3.8'
   - 'nightly'
 
 stages:
@@ -16,9 +16,8 @@ matrix:
   include:
     - stage: lint
       name: flake8
-      python: '3.7'
+      python: '3.8'
   allow_failures:
-    - python: '3.8-dev'
     - python: 'nightly'
 
 install:
