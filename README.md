@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/inspectorioinc/intracing.svg?branch=master)](https://travis-ci.org/inspectorioinc/intracing)
+
 # Intracing
 
 This library provides helpers that simplifies
