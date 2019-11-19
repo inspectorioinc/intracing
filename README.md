@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/inspectorioinc/intracing.svg?branch=master)](https://travis-ci.org/inspectorioinc/intracing)
+[![Coverage](https://codecov.io/gh/inspectorioinc/intracing/graph/badge.svg)](https://codecov.io/gh/inspectorioinc/intracing)
 
 # Intracing
 
