@@ -3,6 +3,8 @@ from __future__ import absolute_import
 import opentracing
 from django.apps import AppConfig
 from django.conf import settings
+from django.http import HttpResponse
+
 from django_opentracing import DjangoTracer, OpenTracingMiddleware
 from opentracing_instrumentation.request_context import RequestContextManager
 
@@ -63,6 +65,12 @@ class IntracingDjangoMiddleware(OpenTracingMiddleware, TracingHelper):
         ):
             return request.body
 
+    def _get_response_body(self, response):
+        # not every response has some content, e.g.
+        # StreamingHttpResponse has no content due to its nature
+        if self.store_http_body and isinstance(response, HttpResponse):
+            return response.content
+
     def process_view(self, request, view_func, view_args, view_kwargs):
         super(IntracingDjangoMiddleware, self).process_view(
             request, view_func, view_args, view_kwargs
@@ -88,7 +96,7 @@ class IntracingDjangoMiddleware(OpenTracingMiddleware, TracingHelper):
             span,
             response.status_code,
             response.get('Content-Type'),
-            response.content,
+            self._get_response_body(response),
         )
         response = super(IntracingDjangoMiddleware, self).process_response(
             request, response

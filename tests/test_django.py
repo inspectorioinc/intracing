@@ -31,13 +31,15 @@ def reporter():
 class TestIntracingDjangoMiddleware(object):
 
     @staticmethod
-    def _test_django(client, reporter, **kwargs):
-        response = client.post('/', **kwargs)
+    def _test_django(client, reporter, streaming=False, **kwargs):
+        response = client.post('/stream' if streaming else '/', **kwargs)
         assert response.status_code == 200
-        assert response.content == RESPONSE_DATA
+
+        response_data = response.getvalue() if streaming else response.content
+        assert response_data == RESPONSE_DATA
 
         view_span = reporter.spans[0]
-        assert view_span.operation_name == 'home'
+        assert view_span.operation_name == 'stream' if streaming else 'home'
 
         return view_span
 
@@ -88,6 +90,10 @@ class TestIntracingDjangoMiddleware(object):
         response = client.get('/foo')
         assert response.status_code == 404
         assert not reporter.spans
+
+    def test_django_streaming_response(self, client, reporter):
+        view_span = self._test_django(client, reporter, streaming=True)
+        assert_not_contain_tag(view_span.tags, 'http.response.body')
 
     @pytest.mark.parametrize('middleware', (None, []))
     @mock.patch.dict(sys.modules)
