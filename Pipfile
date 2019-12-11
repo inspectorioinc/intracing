@@ -4,6 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+django = ">=2.2.8"
 django_opentracing = "==0.1.20"
 flask-opentracing = "==0.2.0"
 jaeger-client = "<4"
